@@ -13,9 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 
+@ActiveProfiles("test")
 @SpringBootTest
 public class AppPersonRepositoryTest {
 
@@ -31,6 +33,7 @@ public class AppPersonRepositoryTest {
         userRepository.deleteAll();
     }
 
+    @Deprecated
     @Test
     public void testSaveAndFindPerson() {
 //        LocalDate dob = LocalDate.of(1990, 1, 1);

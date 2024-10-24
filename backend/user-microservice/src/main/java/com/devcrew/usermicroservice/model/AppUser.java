@@ -77,7 +77,11 @@ public class AppUser implements UserDetails {
     @Enumerated(EnumType.STRING)
     Role role;
 
-    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @Default
+    @Column(name = "enabled")
+    Boolean enabled = true;
+
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "person_id", referencedColumnName = "id")
     @JsonIgnore
     @JsonManagedReference

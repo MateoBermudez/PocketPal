@@ -6,10 +6,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@ActiveProfiles("test")
 @SpringBootTest
 public class UserRepositoryTest {
 
@@ -21,6 +23,7 @@ public class UserRepositoryTest {
         userRepository.deleteAll();
     }
 
+    @Deprecated
     @Test
     public void testSaveAndFindUser() {
 //        AppUser user = new AppUser("J123", "Juan@mail", "hashed_password", true, null, null, null, Role.USER);
