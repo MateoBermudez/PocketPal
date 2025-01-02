@@ -1,10 +1,7 @@
 package com.devcrew.usermicroservice.config;
 
-import com.devcrew.usermicroservice.model.AppPerson;
-import com.devcrew.usermicroservice.model.AppUser;
-import com.devcrew.usermicroservice.model.Role;
-import com.devcrew.usermicroservice.repository.PersonRepository;
-import com.devcrew.usermicroservice.repository.UserRepository;
+import com.devcrew.usermicroservice.model.*;
+import com.devcrew.usermicroservice.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,15 +13,76 @@ import java.util.List;
 
 import static java.time.Month.*;
 
+/**
+ * UserAndPersonConfig is a configuration class
+ * that sets up the database with some initial data to test the application.
+ */
 //This class is setting up the database with some initial data to test the application
 @Configuration
 public class UserAndPersonConfig {
 
+    /**
+     * Creates a CommandLineRunner bean that runs the application.
+     * It sets up the database with some initial data to test the application.
+     * It creates roles, permissions, users, and persons.
+     * It also assigns roles and permissions to users.
+     * It saves the data to the database.
+     *
+     * @param userRepository the UserRepository instance
+     * @param personRepository the PersonRepository instance
+     * @param roleRepository the RoleRepository instance
+     * @param permissionRepository the PermissionRepository instance
+     * @param rolePermissionRepository the RolePermissionRepository instance
+     * @return the CommandLineRunner instance
+     */
     @Bean
-    CommandLineRunner commandLineRunner(UserRepository userRepository, PersonRepository personRepository) {
+    CommandLineRunner commandLineRunner(UserRepository userRepository, PersonRepository personRepository, RoleRepository roleRepository, PermissionRepository permissionRepository, RolePermissionRepository rolePermissionRepository) {
         return args -> {
             LocalDate dob1 = LocalDate.of(1990, JANUARY, 1);
             LocalDate dob2 = LocalDate.of(1995, JANUARY, 1);
+
+            Role userRole = new Role(1, "USER");
+            Role adminRole = new Role(2, "ADMIN");
+
+            Permission permission1 = new Permission(1, "CREATE");
+            Permission permission2 = new Permission(2, "READ");
+            Permission permission3 = new Permission(3, "UPDATE");
+            Permission permission4 = new Permission(4, "DELETE");
+            Permission permission5 = new Permission(5, "ADMIN");
+            Permission permission6 = new Permission(6, "FULL_ACCESS");
+
+            roleRepository.saveAll(
+                    List.of(
+                            userRole,
+                            adminRole
+                    )
+            );
+
+            permissionRepository.saveAll(
+                    List.of(
+                            permission1,
+                            permission2,
+                            permission3,
+                            permission4,
+                            permission5,
+                            permission6
+                    )
+            );
+
+            rolePermissionRepository.saveAll(
+                    List.of(
+                            new RolePermission(userRole, permission1, "READ permission for user"),
+                            new RolePermission(userRole, permission2, "CREATE permission for user"),
+                            new RolePermission(userRole, permission3, "DELETE permission for user"),
+                            new RolePermission(userRole, permission4, "UPDATE permission for user"),
+                            new RolePermission(adminRole, permission1, "READ permission for admin"),
+                            new RolePermission(adminRole, permission2, "CREATE permission for admin"),
+                            new RolePermission(adminRole, permission3, "DELETE permission for admin"),
+                            new RolePermission(adminRole, permission4, "UPDATE permission for admin"),
+                            new RolePermission(adminRole, permission5, "ADMIN permission for admin"),
+                            new RolePermission(adminRole, permission6, "FULL permission for admin")
+                    )
+            );
 
             AppUser user1 = new AppUser(
                     "Ma123",
@@ -32,7 +90,7 @@ public class UserAndPersonConfig {
                     false,
                     LocalDate.now(),
                     LocalDate.now(),
-                    null, Role.ADMIN
+                    null, adminRole, null
             );
 
             AppUser user2 = new AppUser(
@@ -41,7 +99,7 @@ public class UserAndPersonConfig {
                     false,
                     LocalDate.now(),
                     LocalDate.now(),
-                    null, Role.ADMIN
+                    null, adminRole, null
             );
 
             user1.setHashed_password(new BCryptPasswordEncoder().encode("123"));

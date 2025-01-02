@@ -5,12 +5,10 @@ on:
     branches:
       - main
       - develop
-      - feature/*
   pull_request:
     branches:
       - main
       - develop
-      - feature/*
 
 jobs:
   build:
@@ -19,7 +17,11 @@ jobs:
     strategy:
       matrix:
         microservice:
+          - eureka-server
+          - api-gateway
           - user-microservice
+          - log-microservice
+
 
     steps:
       - name: Checkout code
@@ -32,7 +34,7 @@ jobs:
           distribution: 'adopt'
 
       - name: Cache Maven dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -49,12 +51,12 @@ jobs:
 
       - name: Build microservice
         run: |
-          cd backend/${{ matrix.microservice }}  
+          cd ${{ matrix.microservice }}  
           ./mvnw clean install             
 
       - name: Run tests
         run: |
-          cd backend/${{ matrix.microservice }}  
+          cd ${{ matrix.microservice }}  
           ./mvnw test                    
 
       - name: Stop H2 Database
