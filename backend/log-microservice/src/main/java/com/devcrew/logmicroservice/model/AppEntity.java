@@ -6,9 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
 
+import java.io.Serial;
+import java.io.Serializable;
+
+/**
+ * App entity, represents all the tables of the project database.
+ */
 @Entity
 @Table(
         name = "APP_ENTITY",
@@ -18,10 +22,14 @@ import org.hibernate.annotations.DynamicUpdate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@DynamicInsert
-@DynamicUpdate
-public class AppEntity {
+public class AppEntity implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * AppEntity id
+     */
     @Id
     @SequenceGenerator(
             name = "app_entity_sequence",
@@ -34,6 +42,9 @@ public class AppEntity {
     )
     private Integer id;
 
+    /**
+     * AppEntity name
+     */
     @Column(name = "name")
     @NotNull
     private String name;

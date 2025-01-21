@@ -1,23 +1,30 @@
 package com.devcrew.logmicroservice.config;
 
-import com.devcrew.logmicroservice.model.Action;
-import com.devcrew.logmicroservice.model.AppEntity;
-import com.devcrew.logmicroservice.model.AppModule;
-import com.devcrew.logmicroservice.repository.ActionRepository;
-import com.devcrew.logmicroservice.repository.AppEntityRepository;
-import com.devcrew.logmicroservice.repository.ModuleRepository;
+import com.devcrew.logmicroservice.model.*;
+import com.devcrew.logmicroservice.repository.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.web.config.EnableSpringDataWebSupport;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This class is used to populate the database with initial data.
+ * It is used to populate the database with the list of actions, modules, and tables.
+ * The list of actions and modules are predefined, while the list of tables is retrieved from the database.
+ */
 @Configuration
+// Enable Spring Data Web Support for Pageable and Sort objects
+@EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
 public class InitialDataConfig {
 
+    /**
+     * JDBC URL, username, and password are used to connect to the database to retrieve the list of tables.
+     */
     @Value("${spring.datasource.url}")
     private String jdbcUrl;
 
@@ -27,6 +34,13 @@ public class InitialDataConfig {
     @Value("${spring.datasource.password}")
     private String password;
 
+    /**
+     * This method is used to populate the database with the list of actions, modules, and tables.
+     * @param actionRepository The repository for the Action entity
+     * @param appEntityRepository The repository for the AppEntity entity
+     * @param moduleRepository The repository for the Module entity
+     * @return CommandLineRunner object that is used to populate the database with the list of actions, modules, and tables
+     */
     // Just to test the application
     @Bean
     CommandLineRunner commandLineRunner(ActionRepository actionRepository, AppEntityRepository appEntityRepository, ModuleRepository moduleRepository) {
@@ -62,6 +76,10 @@ public class InitialDataConfig {
         };
     }
 
+    /**
+     * This method is used to retrieve the list of tables from the database.
+     * @return List of AppEntity objects that represent the tables in the database
+     */
     private List<AppEntity> getTables() {
         List<AppEntity> tablesList = new ArrayList<>();
         int tableIDcount = 1;

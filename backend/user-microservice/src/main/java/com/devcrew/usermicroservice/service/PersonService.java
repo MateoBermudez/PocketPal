@@ -73,7 +73,6 @@ public class PersonService {
      * @return a list of PersonDTO objects with information about each person
      */
     public List<PersonDTO> getPeople(String token) {
-        validateAdminPermissions(token);
         return personRepository.findAll().stream().map(PersonMapper::toDTO).toList();
     }
 
@@ -109,12 +108,14 @@ public class PersonService {
             person.getAppUser().setId(personFromToken.getAppUser().getId());
             person.getAppUser().setAppPerson(person);
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Update", "User", "app_person", person.getId(),
                     "Person with:" + person.getId() + " ID has been updated successfully.",
                     jsonBefore,
-                    JsonBuilderUtils.jsonBuilder(person)
+                    JsonBuilderUtils.jsonBuilder(person),
+                    person.getAppUser().getUsername(),
+                    person.getAppUser().getEmail()
             );
 
             personRepository.save(person);
@@ -135,12 +136,14 @@ public class PersonService {
         try {
             AppPerson person = PersonMapper.toEntity(personDTO);
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Create", "User", "app_person", person.getId(),
                     "Person with:" + person.getId() + " ID has been created successfully.",
                     "{}",
-                    JsonBuilderUtils.jsonBuilder(person)
+                    JsonBuilderUtils.jsonBuilder(person),
+                    person.getAppUser().getUsername(),
+                    person.getAppUser().getEmail()
             );
 
             personRepository.save(person);
@@ -158,17 +161,18 @@ public class PersonService {
     @Transactional
     public void deletePerson(String token, Integer id) {
         try {
-            validateAdminPermissions(token);
             AppPerson person = personRepository.findById(id).orElseThrow(
                     () -> new UserDoesNotExistException("User does not exist")
             );
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Delete", "User", "app_person", id,
                     "Person with:" + id + " ID has been deleted successfully.",
                     JsonBuilderUtils.jsonBuilder(person),
-                    "{}"
+                    "{}",
+                    person.getAppUser().getUsername(),
+                    person.getAppUser().getEmail()
             );
 
             personRepository.delete(person);
@@ -195,11 +199,15 @@ public class PersonService {
     }
 
     /**
-     * Validates if the user has admin of full access permissions.
-     *
+     * Retrieves the person information from a valid token.
      * @param token the JWT token of the user making the request
+     * @return a PersonDTO object with information about the person
      */
-    private void validateAdminPermissions(String token) {
-        AuthorizationUtils.validateAdminPermissions(token, jwtValidation, userRepository, rolePermissionRepository);
+    public PersonDTO getPersonFromValidToken(String token) {
+        String username = jwtValidation.validateUsernameFromToken(token);
+        AppUser user = userRepository.findByUsername(username).orElseThrow(
+                () -> new UserDoesNotExistException("User does not exist")
+        );
+        return PersonMapper.toDTO(user.getAppPerson());
     }
 }

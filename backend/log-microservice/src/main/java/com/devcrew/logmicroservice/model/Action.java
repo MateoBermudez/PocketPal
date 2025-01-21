@@ -6,9 +6,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
 
+import java.io.Serial;
+import java.io.Serializable;
+
+/**
+ * Action entity, represents the action that the user has performed based on CRUD operations.
+ */
 @Entity
 @Table (
         name = "ACTION",
@@ -18,10 +22,14 @@ import org.hibernate.annotations.DynamicUpdate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@DynamicInsert
-@DynamicUpdate
-public class Action {
+public class Action implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * Action id
+     */
     @Id
     @SequenceGenerator(
             name = "action_sequence",
@@ -34,6 +42,9 @@ public class Action {
     )
     private Integer id;
 
+    /**
+     * Action name
+     */
     @Column(name = "name")
     @NotNull
     private String name;

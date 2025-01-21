@@ -95,12 +95,14 @@ public class AuthService {
 
             String jsonAfter = JsonBuilderUtils.jsonBuilder(userSaved);
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Update", "User", "app_user", userId,
                     "User with " + username + " username has been logged in successfully.",
                     jsonBefore,
-                    jsonAfter
+                    jsonAfter,
+                    username,
+                    userSaved.getEmail()
             );
 
             return AuthResponse.builder()
@@ -136,6 +138,11 @@ public class AuthService {
                 throw new UserAlreadyExistsException("Email already exists");
             }
 
+            if (!ValidationUtils.isPasswordValid(request.getPassword())) {
+                throw new BadCredentialsException("Not secure password. \n" +
+                        "The password must contain at least one digit, one lowercase letter, one uppercase letter, and no whitespace.");
+            }
+
             Role defaultRole = roleRepository.findByName("USER").orElse(null);
 
             AppUser user = AppUser.builder()
@@ -155,12 +162,14 @@ public class AuthService {
             AppUser userSaved = userRepository.findByUsername(request.getUser_name()).orElse(null);
             Integer userId = userSaved != null ? userSaved.getId() : null;
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Create", "User", "app_user", userId,
                     "User with " + request.getUser_name() + " username has been created successfully.",
                     JsonBuilderUtils.jsonBuilder("{}"),
-                    JsonBuilderUtils.jsonBuilder(userSaved)
+                    JsonBuilderUtils.jsonBuilder(userSaved),
+                    request.getUser_name(),
+                    request.getMail()
             );
 
             return AuthResponse.builder()

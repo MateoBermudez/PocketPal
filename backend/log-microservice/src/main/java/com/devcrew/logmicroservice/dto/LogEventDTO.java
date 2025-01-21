@@ -4,6 +4,9 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Data Transfer Object for LogEvent entity.
+ */
 @Data
 @Builder
 @RequiredArgsConstructor
@@ -16,6 +19,6 @@ public class LogEventDTO {
     private ActionDTO action;
     private AppEntityDTO appEntity;
     private AppModuleDTO appModule;
-    private Integer user_identifier;
+    private LogUserDTO user_identifier;
     private LocalDateTime creationDate;
 }

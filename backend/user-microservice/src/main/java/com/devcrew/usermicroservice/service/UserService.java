@@ -91,7 +91,6 @@ public class UserService {
      * @return a list of UserDTO objects containing the user's information
      */
     public List<UserDTO> getUsers(String token) {
-        validateAdminPermissions(token);
         return userRepository.findAll().stream().map(UserMapper::toDTO).toList();
     }
 
@@ -118,12 +117,14 @@ public class UserService {
         try {
             AppUser user = validatePermissions(username, token, "DELETE");
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Delete", "User", "app_user", user.getId(),
                     "User with " + username + " username has been deleted successfully.",
                     JsonBuilderUtils.jsonBuilder(user),
-                    "{}"
+                    "{}",
+                    user.getUsername(),
+                    user.getEmail()
             );
 
             userRepository.deleteById(user.getId());
@@ -158,12 +159,14 @@ public class UserService {
 
             String jsonAfter = JsonBuilderUtils.jsonBuilder(user);
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Update", "User", "app_user", user.getId(),
                     "User with " + username + " username email has been changed successfully.",
                     jsonBefore,
-                    jsonAfter
+                    jsonAfter,
+                    user.getUsername(),
+                    user.getEmail()
             );
 
             userRepository.save(user);
@@ -200,12 +203,14 @@ public class UserService {
 
             String jsonAfter = JsonBuilderUtils.jsonBuilder(user);
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Update", "User", "app_user", user.getId(),
                     "User with " + username + " username has been changed successfully to " + newUsername + " username.",
                     jsonBefore,
-                    jsonAfter
+                    jsonAfter,
+                    user.getUsername(),
+                    user.getEmail()
             );
 
             userRepository.save(user);
@@ -236,12 +241,14 @@ public class UserService {
 
             userRepository.save(user);
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Update", "User", "app_user", user.getId(),
                     "User with " + username + " username password has been changed successfully.",
                     jsonBefore,
-                    jsonAfter
+                    jsonAfter,
+                    user.getUsername(),
+                    user.getEmail()
             );
 
         } catch (Exception ex) {
@@ -260,7 +267,6 @@ public class UserService {
     @Transactional
     public void changeUserRole(String token, String username, String roleInput) {
         try {
-            validateAdminPermissions(token);
             AppUser user = userRepository.findByUsername(username).orElseThrow(
                     () -> new UserDoesNotExistException("User does not exist")
             );
@@ -276,12 +282,14 @@ public class UserService {
 
             userRepository.save(user);
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Update", "User", "app_user", user.getId(),
                     "User with " + username + " username role has been changed successfully.",
                     jsonBefore,
-                    jsonAfter
+                    jsonAfter,
+                    user.getUsername(),
+                    user.getEmail()
             );
 
         } catch (UserDoesNotExistException | BadRequestException ex) {
@@ -310,12 +318,14 @@ public class UserService {
 
             String jsonAfter = JsonBuilderUtils.jsonBuilder(user);
 
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Update", "User", "app_user", user.getId(),
                     "User with " + username + " username has been logged out successfully.",
                     jsonBefore,
-                    jsonAfter
+                    jsonAfter,
+                    user.getUsername(),
+                    user.getEmail()
             );
 
         } catch (Exception ex) {
@@ -341,22 +351,15 @@ public class UserService {
      *
      * @param token the JWT token of the user doing the operation
      */
-    private boolean validateAdminPermissions(String token) {
-        return (AuthorizationUtils.validateAdminPermissions(token, jwtValidation, userRepository, rolePermissionRepository));
-    }
-
-    /**
-     * Validates if the user has admin permissions.
-     *
-     * @param token the JWT token of the user doing the operation
-     */
     public boolean validateAdmin(String token) {
-        return validateAdminPermissions(token);
+        return AuthorizationUtils.validateAdminPermissions(token, jwtValidation, userRepository, rolePermissionRepository);
     }
 
 
     /**
      * Saves a user to the database.
+     * If the user already exists, it returns the user.
+     * This is used for OAuth2 login.
      *
      * @param oAuth2User the user to save
      * @return the saved user
@@ -379,22 +382,35 @@ public class UserService {
         return user;
     }
 
+    /**
+     * Sends a log for an existing OAuth2 user.
+     * @param user the user to send the log for
+     */
     private void sendLogForExistingOAuth2User(AppUser user) {
         try {
             String jsonBefore = JsonBuilderUtils.jsonBuilder(user);
             user.setLoggedIn(true);
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Update", "User", "app_user", user.getId(),
                     "User with " + user.getUsername() + " username has logged in successfully using OAuth2.",
                     jsonBefore,
-                    JsonBuilderUtils.jsonBuilder(user)
+                    JsonBuilderUtils.jsonBuilder(user),
+                    user.getUsername(),
+                    user.getEmail()
             );
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
     }
 
+    /**
+     * Handles the OAuth2 login.
+     * Saves the user to the database.
+     * @param oAuth2User the OAuth2 user
+     * @param email the email of the user
+     * @return the saved user
+     */
     private AppUser handleOAuth2Login(OAuth2User oAuth2User, String email) {
         AppUser user;
         try {
@@ -414,17 +430,117 @@ public class UserService {
         return user;
     }
 
+    /**
+     * Sends a log for a created OAuth2 user.
+     * @param user the user to send the log for
+     */
     private void sendLogForCreatedOAuth2User(AppUser user) {
         try {
-            logSenderService.sendLog(
+            logSenderService.mapAndSendLog(
                     null, null, null,
                     "Create", "User", "app_user", user.getId(),
                     "User with " + user.getUsername() + " username has been created successfully using OAuth2.",
                     JsonBuilderUtils.jsonBuilder("{}"),
-                    JsonBuilderUtils.jsonBuilder(user)
+                    JsonBuilderUtils.jsonBuilder(user),
+                    user.getUsername(),
+                    user.getEmail()
             );
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
+
+    /**
+     * Saves the 2FA secret key to the database.
+     * @param token the JWT token of the user doing the operation
+     * @param encryptedSecretKey the encrypted 2FA secret key
+     * @return the email of the user whose 2FA secret key was saved
+     */
+    @Transactional
+    public String update2FASecretKey(String token, String encryptedSecretKey) {
+        AppUser user = userRepository.findByUsername(jwtValidation.validateUsernameFromToken(token)).orElseThrow(
+                () -> new UserDoesNotExistException("User does not exist")
+        );
+        user.setTwoFactorAuthSecretKey(encryptedSecretKey);
+        return userRepository.save(user).getEmail();
+    }
+
+    /**
+     * Retrieves the 2FA secret key from the database.
+     * @param token the JWT token of the user doing the operation
+     * @return the 2FA secret key
+     */
+    public String get2FASecretKey(String token) {
+        return userRepository.findByUsername(jwtValidation.validateUsernameFromToken(token)).orElseThrow(
+                () -> new UserDoesNotExistException("User does not exist")
+        ).getTwoFactorAuthSecretKey();
+    }
+
+    /**
+     * Updates the 2FA status of a user. If the status is true, the user is authenticated.
+     * @param token the JWT token of the user doing the operation
+     * @param faStatus the 2FA status
+     */
+    @Transactional
+    public void updateUser2FAStatus(String token, boolean faStatus) {
+        AppUser user = userRepository.findByUsername(jwtValidation.validateUsernameFromToken(token)).orElseThrow(
+                () -> new UserDoesNotExistException("User does not exist")
+        );
+        try {
+            String jsonBefore = JsonBuilderUtils.jsonBuilder(user);
+
+            user.setAuthenticated(faStatus);
+
+            logSenderService.mapAndSendLog(
+                    null, null, null,
+                    "Update", "User", "app_user", user.getId(),
+                    "User with " + user.getUsername() + " username has been authenticated successfully.",
+                    jsonBefore,
+                    JsonBuilderUtils.jsonBuilder(user),
+                    user.getUsername(),
+                    user.getEmail()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        userRepository.save(user);
+    }
+
+    /**
+     * Resets the 2FA status of a user. Used for sensitive operations and to check the user's identity.
+     * @param token the JWT token of the user doing the operation
+     * @param faStatus the 2FA status to reset to
+     */
+    @Transactional
+    public void reset2FA(String token, boolean faStatus) {
+        AppUser user = userRepository.findByUsername(jwtValidation.validateUsernameFromToken(token)).orElseThrow(
+                () -> new UserDoesNotExistException("User does not exist")
+        );
+        user.setAuthenticated(faStatus); // Normally, this should be false
+        user.setTwoFactorAuthSecretKey(null); // Reset the 2FA secret key
+        userRepository.save(user);
+    }
+
+    /**
+     * Retrieves the user information from a valid token.
+     * @param token the JWT token of the user making the request
+     * @return a UserDTO object with information about the user
+     */
+    public UserDTO getUserFromValidToken(String token) {
+        return UserMapper.toDTO(userRepository.findByUsername(jwtValidation.validateUsernameFromToken(token)).orElseThrow(
+                () -> new UserDoesNotExistException("User does not exist")
+        ));
+    }
+
+    /**
+     * Validates if the token holder is a user.
+     * Jwt Validation makes a call to the database to check if the user exists,
+     * so it's not necessary to call the database again.
+     * @param token the JWT token of the user making the request
+     * @return true if the token holder is a user, false otherwise
+     */
+    public boolean validateUser(String token) {
+        return jwtValidation.validateUsernameFromToken(token) != null;
     }
 }

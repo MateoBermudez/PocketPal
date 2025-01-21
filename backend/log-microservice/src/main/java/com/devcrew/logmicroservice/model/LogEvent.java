@@ -7,11 +7,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/**
+ * This class represents the LogEvent entity, which is used to store the logs of the system.
+ */
 @Entity
 @Table (
         name = "LOG_EVENT",
@@ -21,10 +24,14 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@DynamicInsert
-@DynamicUpdate
-public class LogEvent {
+public class LogEvent implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * The id of the log event.
+     */
     @Id
     @SequenceGenerator(
             name = "log_event_sequence",
@@ -37,47 +44,71 @@ public class LogEvent {
     )
     private Integer id;
 
+    /**
+     * The action that was performed.
+     */
     @ManyToOne(optional = false)
     @JoinColumn(name = "action_id", referencedColumnName = "id")
     @NotNull
     private Action actionId;
 
+    /**
+     * The module that was affected.
+     */
     @ManyToOne(optional = false)
     @JoinColumn(name = "module_id", referencedColumnName = "id")
     @NotNull
     private AppModule moduleId;
 
+    /**
+     * The entity that was affected.
+     */
     @ManyToOne(optional = false)
     @JoinColumn(name = "entity_id", referencedColumnName = "id")
     @NotNull
     private AppEntity entityId;
 
-    //It comes from a RestTemplate call to the user microservice
-    @Column(name = "user_id")
+    /**
+     * The user that performed the action.
+     */
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     @NotNull
-    private Integer userId;
+    private LogUser userId;
 
+    /**
+     * The date and time when the log was created.
+     */
     //It will never be updated (The log is created only once)
     @CreationTimestamp
     @Column(name = "creation_date")
     private LocalDateTime creationDate;
 
+    /**
+     * The description of the log.
+     */
     @Column(name = "description")
     @NotNull
     private String description;
 
-    @Column(name = "jsonBefore")
+    /**
+     * The state of the entity before the action was performed.
+     */
+    @Column(name = "json_Before")
     @NotNull
     private String jsonBefore;
 
-    @Column(name = "jsonAfter")
+    /**
+     * The state of the entity after the action was performed.
+     */
+    @Column(name = "json_After")
     @NotNull
     private String jsonAfter;
 
     public LogEvent(Action actionId,
                     AppModule moduleId,
                     AppEntity entityId,
-                    Integer userId,
+                    LogUser userId,
                     String description,
                     String jsonBefore,
                     String jsonAfter) {

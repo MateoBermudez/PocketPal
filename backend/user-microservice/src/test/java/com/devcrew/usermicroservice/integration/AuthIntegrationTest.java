@@ -8,9 +8,9 @@ import com.devcrew.usermicroservice.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -18,11 +18,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.Optional;
-
 import static java.time.Month.JANUARY;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,31 +33,26 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @SpringBootTest
 public class AuthIntegrationTest {
-
     /**
      * MockMvc instance for performing HTTP requests in tests.
      */
     @Autowired
     private MockMvc mockMvc;
-
     /**
      * Repository for managing AppPerson entities.
      */
     @Autowired
     private PersonRepository personRepository;
-
     /**
      * Repository for managing AppUser entities.
      */
     @Autowired
     private UserRepository userRepository;
-
     /**
      * ObjectMapper instance for JSON processing.
      */
     @Autowired
     private ObjectMapper objectMapper;
-
     /**
      * Sets up the test environment before each test.
      * Deletes all entries in the repositories.
@@ -71,6 +64,12 @@ public class AuthIntegrationTest {
     }
 
     /**
+     * Internal API key for accessing the endpoints.
+     */
+    @Value("${internal.api.key}")
+    private String apiKey;
+
+    /**
      * Test for the login endpoint.
      * This test verifies that a valid login request returns a token.
      * The test also sets up the initial state by saving a test user in the repository.
@@ -79,8 +78,6 @@ public class AuthIntegrationTest {
      * @throws Exception if an error occurs during the request
      */
     @Test
-    @Deprecated
-    @Disabled
     public void loginTest() throws Exception {
         SaveUser();
         String jsonLogin = """
@@ -89,21 +86,17 @@ public class AuthIntegrationTest {
                   "password": "123"
                 }
                 """;
-
         MvcResult result = mockMvc.perform(post("/auth/login")
+                        .header("X-API-Key", apiKey)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonLogin))
                 .andExpect(status().isOk())
                 .andReturn();
-
         String responseContent = result.getResponse().getContentAsString();
-
         String token = objectMapper.readTree(responseContent).get("token").asText();
-
         Assertions.assertNotNull(token);
         Assertions.assertFalse(token.isEmpty());
     }
-
     /**
      * Test for the registration endpoint.
      * This test verifies that a valid registration request returns a token and saves the user.
@@ -111,14 +104,12 @@ public class AuthIntegrationTest {
      * @throws Exception if an error occurs during the request
      */
     @Test
-    @Deprecated
-    @Disabled
     public void registerTest() throws Exception{
         String jsonRegister = """
                 {
                   "user_name": "Eldest",
                   "mail": "user@gmail.com",
-                  "password": "ThisIsAPassword",
+                  "password": "Mdkjvjdkj293845dmfkvj@@34!!",
                   "authenticated": false,
                   "person": {
                     "user_real_name": "Julian",
@@ -129,26 +120,20 @@ public class AuthIntegrationTest {
                   }
                 }
                 """;
-
         MvcResult result = mockMvc.perform(post("/auth/register")
+                        .header("X-API-Key", apiKey)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRegister))
                 .andExpect(status().isOk())
                 .andReturn();
-
         String responseContent = result.getResponse().getContentAsString();
-
         String token = objectMapper.readTree(responseContent).get("token").asText();
-
         Assertions.assertNotNull(token);
         Assertions.assertFalse(token.isEmpty());
-
         Optional<AppUser> user = userRepository.findByUsername("Eldest");
-
         Assertions.assertTrue(user.isPresent());
         Assertions.assertEquals("Julian", user.get().getAppPerson().getName());
     }
-
     /**
      * Saves a test user in the repository.
      * This method is used to set up the initial state for the login test.
@@ -164,6 +149,7 @@ public class AuthIntegrationTest {
                 LocalDate.now(),
                 null, adminRole, null
         );
+        user1.setEnabled(true);
         AppPerson person1 = new AppPerson(
                 "Mariam",
                 "Gonzalez",
@@ -177,5 +163,4 @@ public class AuthIntegrationTest {
         personRepository.save(person1);
         userRepository.save(user1);
     }
-
 }
