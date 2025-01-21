@@ -5,23 +5,55 @@ on:
     branches:
       - main
       - develop
+      - feature/*
   pull_request:
     branches:
       - main
       - develop
+      - feature/*
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     strategy:
       matrix:
         microservice:
-          - eureka-server
-          - api-gateway
-          - user-microservice
-          - log-microservice
-
+          - name: eureka-server
+            envs: [] # No secrets needed
+          - name: api-gateway
+            envs:
+              - INTERNAL_API_KEY
+              - JWT_SECRET
+          - name: user-microservice
+            envs:
+              - DB_URL
+              - DB_USERNAME
+              - DB_PASSWORD
+              - JWT_SECRET
+              - INTERNAL_API_KEY
+              - OAUTH2_GOOGLE_CLIENT_ID
+              - OAUTH2_GOOGLE_CLIENT_SECRET
+              - EMAIL_HOST
+              - EMAIL_PORT
+              - EMAIL_USERNAME
+              - EMAIL_PASSWORD
+              - ENCRYPTION_SECRET
+              - RABBITMQ_USERNAME
+              - RABBITMQ_PASSWORD
+          - name: log-microservice
+            envs:
+              - DB_URL
+              - DB_USERNAME
+              - DB_PASSWORD
+          - name: product-microservice
+            envs:
+              - DB_URL
+              - DB_USERNAME
+              - DB_PASSWORD
+              - INTERNAL_API_KEY
+              - RABBITMQ_USERNAME
+              - RABBITMQ_PASSWORD
 
     steps:
       - name: Checkout code
@@ -31,7 +63,7 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '17'
-          distribution: 'adopt'
+          distribution: 'temurin'
 
       - name: Cache Maven dependencies
         uses: actions/cache@v3
@@ -50,14 +82,44 @@ jobs:
           sleep 10
 
       - name: Build microservice
+        env:
+          INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          OAUTH2_GOOGLE_CLIENT_ID: ${{ secrets.OAUTH2_GOOGLE_CLIENT_ID }}
+          OAUTH2_GOOGLE_CLIENT_SECRET: ${{ secrets.OAUTH2_GOOGLE_CLIENT_SECRET }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          ENCRYPTION_SECRET: ${{ secrets.ENCRYPTION_SECRET }}
+          RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME }}
+          RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
         run: |
-          cd ${{ matrix.microservice }}  
-          ./mvnw clean install             
+          cd backend/${{ matrix.microservice.name }}
+          ./mvnw clean install -DskipTests
 
       - name: Run tests
+        env:
+          INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          OAUTH2_GOOGLE_CLIENT_ID: ${{ secrets.OAUTH2_GOOGLE_CLIENT_ID }}
+          OAUTH2_GOOGLE_CLIENT_SECRET: ${{ secrets.OAUTH2_GOOGLE_CLIENT_SECRET }}
+          EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+          EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
+          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          ENCRYPTION_SECRET: ${{ secrets.ENCRYPTION_SECRET }}
+          RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME }}
+          RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
         run: |
-          cd ${{ matrix.microservice }}  
-          ./mvnw test                    
+          cd backend/${{ matrix.microservice.name }}
+          ./mvnw test
 
       - name: Stop H2 Database
         run: |
