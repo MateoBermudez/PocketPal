@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('signUp').addEventListener('click', function(event) {
         event.preventDefault(); // Evita que el formulario se envíe de forma predeterminada
 
+        window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+
+        /*
         alert("Hola")
 
         const userName = document.querySelector('input[placeholder="Name"]').value;
@@ -31,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         alert("Registrando usuario");
 
-        fetch('http://localhost:8080/auth/register', {
+        fetch('http://localhost:8079/auth/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -47,5 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error:', error);
                 // Aquí puedes mostrar un mensaje de error al usuario
             });
+
+         */
     });
 });
