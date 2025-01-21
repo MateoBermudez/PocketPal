@@ -46,14 +46,6 @@ jobs:
               - DB_URL
               - DB_USERNAME
               - DB_PASSWORD
-          - name: product-microservice
-            envs:
-              - DB_URL
-              - DB_USERNAME
-              - DB_PASSWORD
-              - INTERNAL_API_KEY
-              - RABBITMQ_USERNAME
-              - RABBITMQ_PASSWORD
 
     steps:
       - name: Checkout code
